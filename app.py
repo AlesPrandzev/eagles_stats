@@ -94,19 +94,32 @@ with tab1:
         celkem_0_0 = len(df_0_0)
         svihy = df_0_0['Swing'].sum()
         pct = (svihy / celkem_0_0 * 100) if celkem_0_0 > 0 else 0
-        
         st.metric("Agresivita na první nadhoz", f"{pct:.1f} %", f"{svihy} švihů z {celkem_0_0} nadhozů", delta_color="off")
         
+        # --- NOVÁ STATISTIKA: Švihání na 0 striků (0-0, 1-0, 2-0, 3-0) ---
+        st.subheader("Švihání na 1. strike (Stav 0 striků)")
+        # Abychom vzali stav 0 striků, musíme si datový typ převést na číslo (nebo vyfiltrovat text)
+        df_0_strike = df_filt[df_filt['Stav_Strikes'].astype(int) == 0].copy()
+        df_0_strike['Swing'] = df_0_strike['text_lower'].str.contains('swinging strike|foul').astype(int) | df_0_strike['AB_flag'] | df_0_strike['SF'] | df_0_strike['SH']
+        
+        celkem_0_strike = len(df_0_strike)
+        svihy_0_strike = df_0_strike['Swing'].sum()
+        pct_0_strike = (svihy_0_strike / celkem_0_strike * 100) if celkem_0_strike > 0 else 0
+        st.metric("Agresivita bez striku", f"{pct_0_strike:.1f} %", f"{svihy_0_strike} švihů z {celkem_0_strike} nadhozů", delta_color="off")
+        
+        st.divider() # Vizuální oddělovací čára pro přehlednost
+        
         if vybrany_hrac == "Celý tým":
-             first_pitch_stats = df_0_0.groupby('Pálkař').agg(
-                 Total_0_0_Pitches=('Count', 'count'),
+             # Zobrazíme tabulku agresivity pro 0 striků pro celý tým
+             first_strike_stats = df_0_strike.groupby('Pálkař').agg(
+                 Pitches=('Count', 'count'),
                  Swings=('Swing', 'sum')
              ).reset_index()
-             first_pitch_stats['Swing_%'] = (first_pitch_stats['Swings'] / first_pitch_stats['Total_0_0_Pitches'] * 100).round(1)
-             first_pitch_stats = first_pitch_stats[first_pitch_stats['Total_0_0_Pitches'] >= 3]
-             first_pitch_stats = first_pitch_stats.sort_values(by='Swing_%', ascending=False)
-             st.write("Agresivita hráčů (Stav 0-0):")
-             st.dataframe(first_pitch_stats, hide_index=True)
+             first_strike_stats['Swing_%'] = (first_strike_stats['Swings'] / first_strike_stats['Pitches'] * 100).round(1)
+             first_strike_stats = first_strike_stats[first_strike_stats['Pitches'] >= 3]
+             first_strike_stats = first_strike_stats.sort_values(by='Swing_%', ascending=False)
+             st.write("Agresivita hráčů bez striku (0-0, 1-0, 2-0, 3-0):")
+             st.dataframe(first_strike_stats, hide_index=True)
         else:
              st.subheader("Z jakého stavu jsou Hity?")
              df_hits = df_filt[df_filt['H'] == 1]
