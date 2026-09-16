@@ -4,8 +4,8 @@ import numpy as np
 
 st.set_page_config(page_title="Eagles Praha - Analytika", layout="wide")
 
-st.title("🦅 Eagles Praha - Pálkařská Analytika")
-st.markdown("Interaktivní dashboard ze všech stažených play-by-play dat sezóny 2026.")
+st.title("Eagles Praha - Pálkařská Analytika")
+st.markdown("Interaktivní dashboard ze všech stažených play-by-play dat sezóny 2026. Pokud nevidíte nastavení - rozklikněte vlevo nahoře >> (výběr hráče/části)")
 
 # 1. NAČTENÍ A FILTRACE DAT (cache zajistí bleskové načítání)
 @st.cache_data
@@ -108,7 +108,7 @@ with tab1:
              st.write("Agresivita hráčů (Stav 0-0):")
              st.dataframe(first_pitch_stats, hide_index=True)
         else:
-             st.subheader("Z jakého stavu dáváme Hity?")
+             st.subheader("Z jakého stavu jsou Hity?")
              df_hits = df_filt[df_filt['H'] == 1]
              hit_counts = df_hits['Count'].value_counts().reset_index()
              hit_counts.columns = ['Stav (Count)', 'Počet Hitů']
@@ -160,7 +160,7 @@ with tab1:
             hit_counts = df_hits['Count'].value_counts().reset_index()
             hit_counts.columns = ['Stav (Count)', 'Počet Hitů']
             st.dataframe(hit_counts, hide_index=True)
-            
+
 with tab2:
     st.write("Kompletní historie nadhozů pro tento výběr:")
     zobrazene_sloupce = ['Zápas_ID', 'Fáze', 'Směna', 'Outy', 'Count', 'Pálkař', 'Nadhazovač', 'Popis_Akce']
