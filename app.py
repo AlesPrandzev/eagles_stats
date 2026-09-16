@@ -7,12 +7,29 @@ st.set_page_config(page_title="Eagles Praha - Analytika", layout="wide")
 st.title("🦅 Eagles Praha - Pálkařská Analytika")
 st.markdown("Interaktivní dashboard ze všech stažených play-by-play dat sezóny 2026.")
 
-# 1. NAČTENÍ DAT (cache zajistí bleskové načítání)
+# 1. NAČTENÍ A FILTRACE DAT (cache zajistí bleskové načítání)
 @st.cache_data
 def load_data():
-    df = pd.read_csv('eagles_data_web.csv')
+    df = pd.read_csv('eagles_data_web.csv') # Název tvého souboru na GitHubu
     df['text_lower'] = df['Popis_Akce'].fillna('').str.lower()
     
+    # =========================================================
+    # 🚨 ULTIMÁTNÍ FILTR: LOKACE NADHOZU + VALIDNÍ AKCE 🚨
+    # =========================================================
+    ma_lokaci = df['Pitch_Y'] > 0
+
+    ma_akci = (
+        (df['Je_Hit'] == 1) | 
+        (df['Je_Walk'] == 1) | 
+        (df['Outy'] > 0) | 
+        df['text_lower'].str.contains('strikes out|grounds out|flies out|lines out|pops out|error|wild pitch|passed ball')
+    )
+
+    nesmysly = df['text_lower'].str.contains('end of the|middle of the|coaching visit|defensive conference|play ball')
+
+    df = df[(ma_lokaci | ma_akci) & (~nesmysly)].copy()
+    # =========================================================
+
     # Výpočetní sloupce pro analýzu AB
     df['H'] = df['text_lower'].str.contains('singles|doubles|triples|homers').astype(int)
     df['SO'] = df['text_lower'].str.contains('strikes out|strikeout error').astype(int)
@@ -33,18 +50,16 @@ df = load_data()
 # =========================================================
 st.sidebar.header("Nastavení")
 
-# Zde jsou všichni "falešní" pálkaři a soupeři, které nechceme vidět
+# Blacklist soupeřů a chyb zápisu
 blacklist = [
-    "David KřEčEK",
+    "Caleb FREEMAN", "Adam TOšOVSKý", "Filip NěMEC", "David KřEčEK",
     "Eduard NOSEK", "Jakub HAJTMAR", "Kamil PEJCHAL", "Marian HARIG",
     "Michal POKORNý", "Michal ZELENKA", "Milan PROKOP", "Neznámý",
     "Ondřej HRDLIčKA", "Tomáš BOHáč"
 ]
 
-# Vyfiltrujeme čistý roster Eagles (vyhodíme blacklist)
 hraci_eagles = sorted([h for h in df['Pálkař'].unique() if h not in blacklist])
 
-# Do roletky přidáme na první místo možnost "Celý tým"
 moznosti_vyberu = ["Celý tým"] + hraci_eagles
 
 vybrany_hrac = st.sidebar.selectbox("Vyber pálkaře:", moznosti_vyberu)
@@ -52,10 +67,8 @@ faze_sezony = st.sidebar.radio("Fáze sezóny:", ["Vše", "Základní část", "
 
 # Aplikace filtrů na DataFrame
 if vybrany_hrac == "Celý tým":
-    # Pokud chce celá čísla, omezíme data jen na validní roster Eagles (bez soupeřů)
     df_filt = df[df['Pálkař'].isin(hraci_eagles)]
 else:
-    # Pokud vybral jednoho hráče
     df_filt = df[df['Pálkař'] == vybrany_hrac]
 
 if faze_sezony != "Vše":
@@ -83,11 +96,23 @@ with tab1:
         
         st.metric("Agresivita na první nadhoz", f"{pct:.1f} %", f"{svihy} švihů z {celkem_0_0} nadhozů", delta_color="off")
         
-        st.subheader("Z jakého stavu dáváme Hity?")
-        df_hits = df_filt[df_filt['H'] == 1]
-        hit_counts = df_hits['Count'].value_counts().reset_index()
-        hit_counts.columns = ['Stav (Count)', 'Počet Hitů']
-        st.dataframe(hit_counts, hide_index=True)
+        if vybrany_hrac == "Celý tým":
+             # Přehled švihání na první nadhoz pro všechny pálkaře v týmu
+             first_pitch_stats = df_0_0.groupby('Pálkař').agg(
+                 Total_0_0_Pitches=('Count', 'count'),
+                 Swings=('Swing', 'sum')
+             ).reset_index()
+             first_pitch_stats['Swing_%'] = (first_pitch_stats['Swings'] / first_pitch_stats['Total_0_0_Pitches'] * 100).round(1)
+             first_pitch_stats = first_pitch_stats[first_pitch_stats['Total_0_0_Pitches'] >= 3]
+             first_pitch_stats = first_pitch_stats.sort_values(by='Swing_%', ascending=False)
+             st.write("Agresivita hráčů (Stav 0-0):")
+             st.dataframe(first_pitch_stats, hide_index=True)
+        else:
+             st.subheader("Z jakého stavu dáváme Hity?")
+             df_hits = df_filt[df_filt['H'] == 1]
+             hit_counts = df_hits['Count'].value_counts().reset_index()
+             hit_counts.columns = ['Stav (Count)', 'Počet Hitů']
+             st.dataframe(hit_counts, hide_index=True)
 
     with col2:
         st.subheader("Úspěšnost (AVG) podle stavu")
@@ -97,8 +122,18 @@ with tab1:
             Hity=('H', 'sum')
         ).reset_index()
         count_stats['AVG'] = (count_stats['Hity'] / count_stats['AB']).round(3)
+        # Zobrazení stavů s alespoň nějakým vzorkem
+        min_ab = 2 if vybrany_hrac != "Celý tým" else 5 
+        count_stats = count_stats[count_stats['AB'] >= min_ab]
         count_stats = count_stats.sort_values(by='AVG', ascending=False)
         st.dataframe(count_stats, hide_index=True)
+        
+        if vybrany_hrac == "Celý tým":
+            st.subheader("Z jakého stavu dává tým Hity?")
+            df_hits = df_filt[df_filt['H'] == 1]
+            hit_counts = df_hits['Count'].value_counts().reset_index()
+            hit_counts.columns = ['Stav (Count)', 'Počet Hitů']
+            st.dataframe(hit_counts, hide_index=True)
 
 with tab2:
     st.write("Kompletní historie nadhozů pro tento výběr:")
