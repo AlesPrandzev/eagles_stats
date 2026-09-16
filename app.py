@@ -102,7 +102,7 @@ with tab1:
         mozne_svihy_0_0 = celkem_0_0 - bally_0_0 
         pct_0_0 = (svihy_0_0 / mozne_svihy_0_0 * 100) if mozne_svihy_0_0 > 0 else 0
         
-        st.metric("Agresivita na první nadhoz", f"{pct_0_0:.1f} %", f"{svihy_0_0} švihů z {mozne_svihy_0_0} hratelných míčů", delta_color="off")
+        st.metric("Agresivita na první nadhoz", f"{pct_0_0:.1f} %", f"{svihy_0_0} švihů z {mozne_svihy_0_0} míčů do striku", delta_color="off")
         
         # ---------------------------------------------------------
         # NOVÉ: ŠVIHÁNÍ NA PRVNÍ STRIKE (Stavy 0-0, 1-0, 2-0, 3-0)
@@ -122,7 +122,7 @@ with tab1:
         mozne_svihy_0_strike = celkem_0_strike - bally_0_strike
         pct_0_strike = (svihy_0_strike / mozne_svihy_0_strike * 100) if mozne_svihy_0_strike > 0 else 0
         
-        st.metric("Agresivita bez striku", f"{pct_0_strike:.1f} %", f"{svihy_0_strike} švihů z {mozne_svihy_0_strike} hratelných míčů", delta_color="off")
+        st.metric("Agresivita bez striku", f"{pct_0_strike:.1f} %", f"{svihy_0_strike} švihů z {mozne_svihy_0_strike} míčů do striku", delta_color="off")
         
         st.divider() # Vizuální oddělovací čára
         
@@ -142,7 +142,7 @@ with tab1:
              first_strike_stats = first_strike_stats[first_strike_stats['Total_Pitches'] >= 3]
              first_strike_stats = first_strike_stats.sort_values(by='Swing_%', ascending=False)
              
-             st.write("Kdo nejvíc švihá hratelné míče (Stav 0 striků):")
+             st.write("Kdo nejvíc švihá míče do striku (Stav 0 striků):")
              # Ukážeme jen to nejdůležitější, ať se to vejde
              st.dataframe(first_strike_stats[['Pálkař', 'Swings', 'Hratelne', 'Swing_%']], hide_index=True, use_container_width=True)
         else:
@@ -175,7 +175,7 @@ with tab1:
             st.write(f"**Looking:** {so_looking} ({pct_looking:.1f}%)")
             
             # Progress bar pro vizualizaci poměru
-            st.progress(int(pct_swinging), text="Poměr švihnutých (vs puštěných) strikeoutů")
+            st.progress(int(pct_swinging), text="Poměr švihnutých (vs prokoukaných) strikeoutů")
         else:
             st.write("Zatím žádné strikeouty! 🎉")
 
