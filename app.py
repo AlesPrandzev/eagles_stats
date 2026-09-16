@@ -83,7 +83,8 @@ st.write(f"Zobrazeno nadhozů/akcí: **{len(df_filt)}**")
 tab1, tab2 = st.tabs(["Situační Analýza", "Surová data"])
 
 with tab1:
-    col1, col2 = st.columns(2)
+    # Rozdělíme obrazovku na 3 sloupce místo 2, ať se tam vejde i analýza Strikeoutů
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         st.subheader("Švihání na 1. nadhoz (Stav 0-0)")
@@ -97,7 +98,6 @@ with tab1:
         st.metric("Agresivita na první nadhoz", f"{pct:.1f} %", f"{svihy} švihů z {celkem_0_0} nadhozů", delta_color="off")
         
         if vybrany_hrac == "Celý tým":
-             # Přehled švihání na první nadhoz pro všechny pálkaře v týmu
              first_pitch_stats = df_0_0.groupby('Pálkař').agg(
                  Total_0_0_Pitches=('Count', 'count'),
                  Swings=('Swing', 'sum')
@@ -115,6 +115,33 @@ with tab1:
              st.dataframe(hit_counts, hide_index=True)
 
     with col2:
+        st.subheader("Typy Strikeoutů (SO)")
+        # ⚾ ZDE JE NOVÁ ANALÝZA STRIKEOUTŮ ⚾
+        df_so = df_filt[df_filt['SO'] == 1].copy()
+        
+        so_swinging = df_so['text_lower'].str.contains('swinging').sum()
+        so_looking = df_so['text_lower'].str.contains('looking').sum()
+        so_celkem = so_swinging + so_looking
+        
+        if so_celkem > 0:
+            pct_swinging = (so_swinging / so_celkem * 100)
+            pct_looking = (so_looking / so_celkem * 100)
+            
+            st.metric("Celkem SO", so_celkem)
+            
+            # Vykreslení jednoduchého koláčového grafu přímo ve Streamlitu
+            import plotly.express as px # Pokud používáš plotly (pip install plotly)
+            # Pokud ne, můžeme udělat jen textový výpis:
+            
+            st.write(f"**Swinging:** {so_swinging} ({pct_swinging:.1f}%)")
+            st.write(f"**Looking:** {so_looking} ({pct_looking:.1f}%)")
+            
+            # Progress bar pro vizualizaci poměru
+            st.progress(int(pct_swinging), text="Poměr švihnutých (vs puštěných) strikeoutů")
+        else:
+            st.write("Zatím žádné strikeouty! 🎉")
+
+    with col3:
         st.subheader("Úspěšnost (AVG) podle stavu")
         df_ab = df_filt[df_filt['AB_flag'] == 1]
         count_stats = df_ab.groupby('Count').agg(
@@ -122,7 +149,6 @@ with tab1:
             Hity=('H', 'sum')
         ).reset_index()
         count_stats['AVG'] = (count_stats['Hity'] / count_stats['AB']).round(3)
-        # Zobrazení stavů s alespoň nějakým vzorkem
         min_ab = 2 if vybrany_hrac != "Celý tým" else 5 
         count_stats = count_stats[count_stats['AB'] >= min_ab]
         count_stats = count_stats.sort_values(by='AVG', ascending=False)
@@ -134,7 +160,7 @@ with tab1:
             hit_counts = df_hits['Count'].value_counts().reset_index()
             hit_counts.columns = ['Stav (Count)', 'Počet Hitů']
             st.dataframe(hit_counts, hide_index=True)
-
+            
 with tab2:
     st.write("Kompletní historie nadhozů pro tento výběr:")
     zobrazene_sloupce = ['Zápas_ID', 'Fáze', 'Směna', 'Outy', 'Count', 'Pálkař', 'Nadhazovač', 'Popis_Akce']
