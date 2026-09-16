@@ -35,7 +35,7 @@ st.sidebar.header("Nastavení")
 
 # Zde jsou všichni "falešní" pálkaři a soupeři, které nechceme vidět
 blacklist = [
-    "Caleb FREEMAN", "Adam TOšOVSKý", "Filip NěMEC", "David KřEčEK",
+    "David KřEčEK",
     "Eduard NOSEK", "Jakub HAJTMAR", "Kamil PEJCHAL", "Marian HARIG",
     "Michal POKORNý", "Michal ZELENKA", "Milan PROKOP", "Neznámý",
     "Ondřej HRDLIčKA", "Tomáš BOHáč"
