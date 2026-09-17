@@ -52,7 +52,7 @@ st.sidebar.header("Nastavení")
 
 # Blacklist soupeřů a chyb zápisu
 blacklist = [
-    "Caleb FREEMAN", "Adam TOšOVSKý", "Filip NěMEC", "David KřEčEK",
+    "David KřEčEK",
     "Eduard NOSEK", "Jakub HAJTMAR", "Kamil PEJCHAL", "Marian HARIG",
     "Michal POKORNý", "Michal ZELENKA", "Milan PROKOP", "Neznámý",
     "Ondřej HRDLIčKA", "Tomáš BOHáč"
